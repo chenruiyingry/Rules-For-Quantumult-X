@@ -28,6 +28,11 @@ jobs:
           git checkout develop
           git merge upstream/develop --allow-unrelated-histories --no-edit || echo "No changes to merge"
 
-      - name: Push changes back to your fork
-        run: |
-          git push origin develop
+      - name: Push changes to your fork (create PR)
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: develop  # 目标分支（你自己的 fork 的 develop 分支）
+          branch: sync-upstream  # 临时工作分支
+          title: "Sync with upstream develop"
+          body: "Automated sync from upstream repository"
