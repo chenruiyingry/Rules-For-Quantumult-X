@@ -1,0 +1,33 @@
+name: Sync from upstream develop branch
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 每天凌晨3点 UTC（北京时间11点）同步
+  workflow_dispatch:       # 支持手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout your fork
+        uses: actions/checkout@v4
+
+      - name: Set up Git
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Add upstream and fetch
+        run: |
+          git remote add upstream https://github.com/sve1r/Rules-For-Quantumult-X.git
+          git fetch upstream
+
+      - name: Merge upstream develop into local develop
+        run: |
+          git checkout develop
+          git merge upstream/develop --no-edit || echo "No changes to merge"
+
+      - name: Push changes back to your fork
+        run: |
+          git push origin develop
