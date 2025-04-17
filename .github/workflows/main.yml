@@ -1,38 +1,40 @@
-name: Sync from upstream develop branch
+name: Upstream Sync
+
+permissions:
+  contents: write
 
 on:
   schedule:
-    - cron: '0 3 * * *'   # 每天凌晨3点 UTC（北京时间11点）同步
-  workflow_dispatch:       # 支持手动触发
+    - cron: "0 0 * * *" # every day
+  workflow_dispatch:
 
 jobs:
-  sync:
+  sync_latest_from_upstream:
+    name: Sync latest commits from upstream repo
     runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork }}
 
     steps:
-      - name: Checkout your fork
-        uses: actions/checkout@v4
+      # Step 1: run a standard checkout action
+      - name: Checkout target repo
+        uses: actions/checkout@v3
 
-      - name: Set up Git
-        run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-
-      - name: Add upstream and fetch
-        run: |
-          git remote add upstream https://github.com/sve1r/Rules-For-Quantumult-X.git
-          git fetch upstream
-
-      - name: Merge upstream develop into local develop
-        run: |
-          git checkout develop
-          git merge upstream/develop --allow-unrelated-histories --no-edit || echo "No changes to merge"
-
-      - name: Push changes to your fork (create PR)
-        uses: peter-evans/create-pull-request@v4
+      # Step 2: run the sync action
+      - name: Sync upstream changes
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: develop  # 目标分支（你自己的 fork 的 develop 分支）
-          branch: sync-upstream  # 临时工作分支
-          title: "Sync with upstream develop"
-          body: "Automated sync from upstream repository"
+          upstream_sync_repo: sve1r/Rules-For-Quantumult-X
+          upstream_sync_branch: develop
+          target_sync_branch: develop
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }} # automatically generated, no need to set
+
+          # Set test_mode true to run tests instead of the true action!!
+          test_mode: false
+
+      - name: Sync check
+        if: failure()
+        run: |
+          echo "[Error] 由于上游仓库的 workflow 文件变更，导致 GitHub 自动暂停了本次自动更新，你需要手动 Sync Fork 一次，详细教程请查看：https://github.com/Yidadaa/ChatGPT-Next-Web/blob/main/README_CN.md#%E6%89%93%E5%BC%80%E8%87%AA%E5%8A%A8%E6%9B%B4%E6%96%B0"
+          echo "[Error] Due to a change in the workflow file of the upstream repository, GitHub has automatically suspended the scheduled automatic update. You need to manually sync your fork. Please refer to the detailed tutorial for instructions: https://github.com/Yidadaa/ChatGPT-Next-Web#enable-automatic-updates"
+          exit 1
