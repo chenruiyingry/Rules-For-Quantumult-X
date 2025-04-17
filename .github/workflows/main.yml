@@ -26,7 +26,7 @@ jobs:
       - name: Merge upstream develop into local develop
         run: |
           git checkout develop
-          git merge upstream/develop --no-edit || echo "No changes to merge"
+          git merge upstream/develop --allow-unrelated-histories --no-edit || echo "No changes to merge"
 
       - name: Push changes back to your fork
         run: |
